@@ -15,6 +15,9 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
 
+    # Удаляем вебхук, если он был установлен ранее
+    await bot.delete_webhook(drop_pending_updates=True)
+
     scheduler = AsyncIOScheduler()
     scheduler.add_job(daily_notification, 'cron', hour=16, minute=0, args=[bot])
     scheduler.start()
