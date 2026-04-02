@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
@@ -196,17 +196,33 @@ async def replacements_today(message: Message):
         text += f"*{lesson_num} урок:* {info}\n"
     await message.answer(text, parse_mode='Markdown')
 
+# ===================== ИСПРАВЛЕННАЯ ФУНКЦИЯ КАНИКУЛ =====================
 @router.message(F.text == '🗓 Каникулы')
 async def holidays_info(message: Message):
     holidays = db.get_holidays()
     if not holidays:
-        await message.answer("Информация о каникулах пока не добавлена.")
+        await message.answer("📭 Информация о каникулах пока не добавлена.")
         return
 
-    text = "🗓 *Каникулы и праздники:*\n\n"
+    today = date.today()
+    upcoming_holidays = []
+
     for start, end, name in holidays:
-        text += f"*{name}:* {start} – {end}\n"
+        start_date = datetime.strptime(start, '%Y-%m-%d').date()
+        if start_date >= today:
+            days_left = (start_date - today).days
+            upcoming_holidays.append((name, start, end, days_left))
+
+    if not upcoming_holidays:
+        await message.answer("🎉 На ближайшее время каникулы не запланированы. Учитесь дальше!")
+        return
+
+    text = "🗓 *Ближайшие каникулы:*\n\n"
+    for name, start, end, days_left in upcoming_holidays:
+        text += f"• *{name}*: {start} – {end} (осталось {days_left} дн.)\n"
+
     await message.answer(text, parse_mode='Markdown')
+# =====================================================================
 
 @router.message(F.text == '⚙️ Админ-панель')
 async def admin_panel(message: Message):
